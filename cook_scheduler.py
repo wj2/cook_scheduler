@@ -20,7 +20,6 @@ import numpy as np
 #                u'Fourth choice', u'Fifth choice']
 # name_col = 'Your Name'
 
-
 def format_date(s):
     month, day, year = s.split('-')
     if len(month) == 1:
@@ -61,7 +60,7 @@ def get_all_choices(data, all_dates):
         dl = data[c].tolist()
         dlf = []
         for d in dl:
-            y, m, d = d.split('-')
+            m, d, y = d.split('/')
             dlf.append(str(py_dt.datetime(int(y), int(m), int(d))))
         all_cho = all_cho + filter(lambda x: x in all_cho, dlf)
     choices = pd.Series(data=all_cho)
@@ -107,11 +106,11 @@ def assign_dates_continuous(data, date_order):
     a = pd.DataFrame(columns=['name','date','choice'])
     unassigned = []
     while len(date_order) > 0:
-        print date_order
         date = date_order[0]
         y, m, d = date[:10].split('-')
         date = py_dt.datetime(int(y), int(m), int(d))
-        date = date.date().strftime(u'%Y-%m-%d')
+        date = '{}/{}/{}'.format(int(m), int(d), int(y))
+        # date = date.date().strftime(u'%Y-%m-%d')
         for i, cho in enumerate(data.columns[2:]):
             choosers = data[data[cho] == date]
             if not choosers.empty:
@@ -121,7 +120,6 @@ def assign_dates_continuous(data, date_order):
         else:
             i_winner = random.choice(range(choosers.shape[0]))
             winner = choosers.iloc[i_winner]
-            print winner[data.columns[1]]
             entry = {'name':winner[data.columns[1]],
                      'date':date,
                      'choice':cho,
