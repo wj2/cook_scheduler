@@ -87,7 +87,7 @@ if __name__ == '__main__':
             if v.value() == 1.0:
                 schedule.append((name, d, list(preferences[name]).index(d)+1))
 
-    schedule = pd.DataFrame(schedule, columns=['name', 'date', 'preference']).set_index('name')
+    schedule = pd.DataFrame(schedule, columns=['name', 'date', 'preference']).set_index('name').sort_values('date')
     print schedule 
 
     if args.output:
