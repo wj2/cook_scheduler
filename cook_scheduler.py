@@ -19,18 +19,21 @@ def create_parser():
 	help='path to preferences csv file')
     return parser
 
-def create_problem(start, end, data, exclude, community):
-    # generate list of eligible dates
-    dates = set(pd.date_range(start, end))
-    dates = dates.difference(exclude)
+def get_preferences(data, dates):
+    """
+    Extract preferences from survey responses table. Also excludes any invalid dates.
 
-    names = []
-    variables = {}
+    Args:
+        data: date preferences DataFrame. data['Your Name'] contains names
+            and preferences are in decreasing order from the third column on
+        dates: list of all valid dates
+    
+    Returns: a dictionary of (name, dates) pairs where dates is a list of valid
+        dates in decreasing order
+    """
     preferences = {}
-
     for i,person in data.iterrows():
 	name = person['Your Name']
-	names.append(name)
 	
 	p = person[2:].values
 	if not dates.issuperset(p):
@@ -40,8 +43,27 @@ def create_problem(start, end, data, exclude, community):
 	    p = [d for d in p if d in dates]
 
 	preferences[name] = p
-	variables[name] = {d: LpVariable('%s %s' % (name,d), cat=LpBinary) 
-		for d in p}
+
+    return preferences
+
+def create_problem(dates, community, preferences):
+    """
+    Create the cook schedule linear programming problem
+
+    Args:
+        dates: list of cook cycle dates
+        community: list of cook cycle dates requring two cooks
+        preferences: dictionary of (name, dates) pairs as returned by get_preferences()
+    
+    Returns: 
+	prob: LpProblem object
+	variables: a dictionary of (name, variables) pairs
+	    where variables is a dictionary of (date, LpVariable)
+            pairs
+    """
+    names = preferences.keys()
+    variables = {name: {d: LpVariable('%s %s' % (name,d), cat=LpBinary) for d in p}
+	for name,p in preferences.items()}
 
     slots = len(dates) + len(community)
     if len(names) < slots:
@@ -68,14 +90,19 @@ def create_problem(start, end, data, exclude, community):
     for d in community:
 	prob += sum(variables[name][d] for name in names if d in preferences[name]) <= 2
 
-    return prob, variables, preferences
+    return prob, variables
 
 if __name__ == '__main__':
     parser = create_parser()
     args = parser.parse_args()
     data = pd.read_csv(args.preferences, parse_dates=range(2,7))
 
-    prob, variables, preferences = create_problem(args.start, args.end, data, pd.Series(args.exclude), pd.Series(args.community))
+    dates = set(pd.date_range(args.start, args.end))\
+	.difference(pd.Series(args.exclude))
+
+    preferences = get_preferences(data, dates)
+
+    prob, variables = create_problem(dates, pd.Series(args.community), preferences)
 
     prob.solve()
     print("Status: %s" % LpStatus[prob.status])
