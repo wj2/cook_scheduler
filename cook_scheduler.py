@@ -1,7 +1,6 @@
 import pandas as pd
 import argparse
 from pulp import *
-from datetime import date, timedelta
 
 def create_parser():
     parser = argparse.ArgumentParser(description='generate an cook cycle assignment from ranked date preferences')
