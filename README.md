@@ -4,7 +4,8 @@ This program generates a cook schedule given a list of date preferences for each
 ### Usage
 ```
 usage: cook_scheduler.py [-h] [-e [EXCLUDE [EXCLUDE ...]]]
-                         [-c [COMMUNITY [COMMUNITY ...]]] [-o OUTPUT]
+                         [-c [COMMUNITY [COMMUNITY ...]]] [--csv CSV]
+                         [--ical ICAL]
                          start end preferences
 
 generate an cook cycle assignment from ranked date preferences
@@ -20,14 +21,14 @@ optional arguments:
                         dates to exclude from cook cycle
   -c [COMMUNITY [COMMUNITY ...]], --community [COMMUNITY [COMMUNITY ...]]
                         dates requiring two cooks
-  -o OUTPUT, --output OUTPUT
-                        file to save schedule to
+  --csv CSV             file to save schedule to
+  --ical ICAL           file to save ical to
 ```
 
 ### Example
-The repository contains sample preferences in the `data` directory. For example, to generate an optimal cook schedule for July and save it to `output.csv`:
+The repository contains sample preferences in the `data` directory. For example, to generate an optimal cook schedule for July and save it to `output.csv` and save an iCalendar to `calendar.ics`:
 ```
-> python cook_scheduler.py 2016-07-31 2016-08-20 data/july_2016.csv -c 2016-08-17 --exclude 2016-08-03 2016-08-10 --output output.csv
+> python cook_scheduler.py 2016-07-31 2016-08-20 data/july_2016.csv -c 2016-08-17 --exclude 2016-08-03 2016-08-10 --csv output.csv --ical calendar.ics
 
 WARNING:root:Sony  selected excluded dates: set([Timestamp('2016-08-21 00:00:00')])
 WARNING:root:There 20 slots but only 18 cooks
