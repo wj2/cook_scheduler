@@ -55,3 +55,8 @@ Magnolia       2016-08-18           1
 David Nekimken 2016-08-19           1
 Sony           2016-08-20           2
 ```
+
+### TODO
+- include dates with missing cooks in the output schedule
+- add wildcard preferences for cooks who have insufficient preferences
+- allow weighting of cook preferences this cycle by assignments last cycle
