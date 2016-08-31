@@ -1,6 +1,7 @@
 import pandas as pd
 import argparse
 from pulp import *
+from icalendar import *
 
 def create_parser():
     parser = argparse.ArgumentParser(description='generate an cook cycle assignment from ranked date preferences')
@@ -8,8 +9,10 @@ def create_parser():
 	help='dates to exclude from cook cycle')
     parser.add_argument('-c', '--community', type=pd.Timestamp, nargs='*',
 	help='dates requiring two cooks')
-    parser.add_argument('-o', '--output', type=str,
-	help='file to save schedule to')
+    parser.add_argument('--csv', type=str,
+	help='file to save schedule to'),
+    parser.add_argument('--ical', type=str,
+	help='file to save ical to'),
     parser.add_argument('start', type=pd.Timestamp,
 	help='date to start the cook cycle on  (inclusive)')
     parser.add_argument('end', type=pd.Timestamp,
@@ -91,6 +94,34 @@ def create_problem(dates, community, preferences):
 
     return prob, variables
 
+def to_icalendar(schedule, community=None):
+    """
+    Args:
+        schedule: dataframe schedule
+
+    Returns:
+        icalendar.Calendar object
+    """
+    calendar = Calendar()
+    for date, names in schedule.groupby('date').groups.items():
+        event = Event()
+        event.add('summary', '%s Dinner' % str.join(' & ', names))
+
+        date = pd.Timestamp(date) # the groupby makes date a datetime64
+        if date.dayofweek in (2,4): 
+            start = 19.5 # Wednesday or Friday dinner is 7:30pm
+        elif date.dayofweek == 5: 
+            start = 12 # Saturday is 12pm brunch
+        else: 
+            start = 19 # all other days are 7pm
+        event.add('dtstart', (date + pd.Timedelta(start,'h')).to_datetime())
+        event.add('dtend', (date + pd.Timedelta(start+1,'h')).to_datetime())
+        event.add('location', 'Bowers House')
+
+        calendar.add_component(event)
+
+    return calendar
+
 if __name__ == '__main__':
     parser = create_parser()
     args = parser.parse_args()
@@ -107,14 +138,19 @@ if __name__ == '__main__':
     print("Status: %s" % LpStatus[prob.status])
     print("Average preference: %s" % value(prob.objective))
 
-    schedule = []
+    schedule = [] # collection of tuples (name, date, rank)
     for name in data['Your Name']:
         for d,v in variables[name].items():
             if v.value() == 1.0:
                 schedule.append((name, d, list(preferences[name]).index(d)+1))
 
-    schedule = pd.DataFrame(schedule, columns=['name', 'date', 'preference']).set_index('name').sort_values('date')
-    print schedule 
+    df = pd.DataFrame(schedule, columns=['name', 'date', 'preference']).set_index('name').sort_values('date')
+    print df
 
-    if args.output:
-        schedule.to_csv(args.output)
+    if args.csv:
+        df.to_csv(args.csv)
+
+    if args.ical:
+        calendar = to_icalendar(df, args.community)
+        with open(args.ical, 'wb') as f:
+            f.write(calendar.to_ical())
