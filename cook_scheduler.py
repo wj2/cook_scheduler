@@ -41,7 +41,7 @@ def get_preferences(data, dates):
 	if not dates.issuperset(p):
 	    bad_dates = set(p).difference(dates)
 	    logging.warning('%s selected excluded dates: %s' % 
-		    (name, bad_dates))
+		    (name, print_dates(bad_dates)))
 	    p = [d for d in p if d in dates]
 
 	preferences[name] = p
@@ -94,8 +94,8 @@ def create_problem(dates, community, preferences):
 
     return prob, variables
 
-# These constants are used by the to_icalendar()
-# The name of the meal
+# These constants indexed by day of week (starting Monday)
+# Used by to_icalendar()
 MEAL_NAMES = ['Dinner', 'Dinner', 'Dinner', 'Dinner',  'Dinner', 
               'Brunch', 'Dinner']
 # The time of day, in hours at which each meal begins
@@ -127,6 +127,9 @@ def to_icalendar(schedule, community=None):
 
     return calendar
 
+def print_dates(dates):
+    return map(lambda d: d.strftime('%d-%m-%Y'), dates)
+
 if __name__ == '__main__':
     parser = create_parser()
     args = parser.parse_args()
@@ -144,10 +147,18 @@ if __name__ == '__main__':
     print("Average preference: %s" % value(prob.objective))
 
     schedule = [] # collection of tuples (name, date, rank)
+    assigned = set()
     for name in data['Your Name']:
         for d,v in variables[name].items():
             if v.value() == 1.0:
                 schedule.append((name, d, list(preferences[name]).index(d)+1))
+                assigned.add(d)
+
+    unassigned = dates.difference(assigned)
+    if len(unassigned) > 0:
+        logging.warning('Unassigned dates: %s' % print_dates(unassigned))
+        schedule += [('',d, None) for d in unassigned]
+
 
     df = pd.DataFrame(schedule, columns=['name', 'date', 'preference']).set_index('name').sort_values('date')
     print df
