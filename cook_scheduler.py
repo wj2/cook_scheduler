@@ -111,7 +111,8 @@ def to_icalendar(schedule, community=None):
         icalendar.Calendar object
     """
     calendar = Calendar()
-    for date, names in schedule.groupby('date').groups.items():
+    for date, names in schedule.set_index('name').groupby('date').groups.items():
+        names = pd.Series(names).fillna('')
         event = Event()
         date = pd.Timestamp(date) # the groupby makes date a datetime64
        
@@ -157,11 +158,11 @@ if __name__ == '__main__':
     unassigned = dates.difference(assigned)
     if len(unassigned) > 0:
         logging.warning('Unassigned dates: %s' % print_dates(unassigned))
-        schedule += [('',d, None) for d in unassigned]
+        schedule += [(None,d,None) for d in unassigned]
 
 
-    df = pd.DataFrame(schedule, columns=['name', 'date', 'preference']).set_index('name').sort_values('date')
-    print df
+    df = pd.DataFrame(schedule, columns=['name', 'date', 'preference'])
+    print(df.set_index('date').sort_index())
 
     if args.csv:
         df.to_csv(args.csv)
