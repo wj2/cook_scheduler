@@ -94,6 +94,14 @@ def create_problem(dates, community, preferences):
 
     return prob, variables
 
+# These constants are used by the to_icalendar()
+# The name of the meal
+MEAL_NAMES = ['Dinner', 'Dinner', 'Dinner', 'Dinner',  'Dinner', 
+              'Brunch', 'Dinner']
+# The time of day, in hours at which each meal begins
+# Each meal is scheduled to last one hour
+MEAL_TIMES = [17, 17, 17.5, 17, 17.5, 12, 17]
+
 def to_icalendar(schedule, community=None):
     """
     Args:
@@ -105,17 +113,14 @@ def to_icalendar(schedule, community=None):
     calendar = Calendar()
     for date, names in schedule.groupby('date').groups.items():
         event = Event()
-        event.add('summary', '%s Dinner' % str.join(' & ', names))
-
         date = pd.Timestamp(date) # the groupby makes date a datetime64
-        if date.dayofweek in (2,4): 
-            start = 19.5 # Wednesday or Friday dinner is 7:30pm
-        elif date.dayofweek == 5: 
-            start = 12 # Saturday is 12pm brunch
-        else: 
-            start = 19 # all other days are 7pm
-        event.add('dtstart', (date + pd.Timedelta(start,'h')).to_datetime())
-        event.add('dtend', (date + pd.Timedelta(start+1,'h')).to_datetime())
+       
+        event.add('summary', '%s %s' % 
+                (str.join(' & ', names), MEAL_NAMES[date.dayofweek]))
+
+        time = MEAL_TIMES[date.dayofweek]
+        event.add('dtstart', (date + pd.Timedelta(time,'h')).to_datetime())
+        event.add('dtend', (date + pd.Timedelta(time+1,'h')).to_datetime())
         event.add('location', 'Bowers House')
 
         calendar.add_component(event)
