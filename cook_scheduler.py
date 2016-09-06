@@ -100,7 +100,7 @@ MEAL_NAMES = ['Dinner', 'Dinner', 'Dinner', 'Dinner',  'Dinner',
               'Brunch', 'Dinner']
 # The time of day, in hours at which each meal begins
 # Each meal is scheduled to last one hour
-MEAL_TIMES = [17, 17, 17.5, 17, 17.5, 12, 17]
+MEAL_TIMES = [19, 19, 19.5, 19, 19.5, 12, 19]
 
 def to_icalendar(schedule, community=None):
     """
