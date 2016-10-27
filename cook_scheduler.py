@@ -2,7 +2,6 @@ import pandas as pd
 import argparse
 from pulp import *
 from icalendar import *
-import collections as c
 
 def create_parser():
     parser = argparse.ArgumentParser(description='generate an cook cycle assignment from ranked date preferences')
