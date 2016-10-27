@@ -14,7 +14,11 @@ def create_parser():
     parser.add_argument('--ical', type=str,
 	help='file to save ical to'),
     parser.add_argument('--preference_power', type=float, default=1.,
-        help='power to raise the cost of preference rankings to'),
+        help='power to raise the cost of preference rankings to (default=1)'),
+    parser.add_argument('--begin_column', type=int, default=2,
+        help='index of the first preference column in the csv (default=2)')
+    parser.add_argument('--end_column', type=int, default=7,
+        help='index of the last preference column in the csv (default=7)')
     parser.add_argument('start', type=pd.Timestamp,
 	help='date to start the cook cycle on  (inclusive)')
     parser.add_argument('end', type=pd.Timestamp,
@@ -141,8 +145,8 @@ def print_dates(dates):
 if __name__ == '__main__':
     parser = create_parser()
     args = parser.parse_args()
-    data = pd.read_csv(args.preferences, parse_dates=range(2,7))
-
+    data = pd.read_csv(args.preferences, 
+                       parse_dates=range(args.begin_column, args.end_column))
     dates = set(pd.date_range(args.start, args.end))\
 	.difference(pd.Series(args.exclude))
     pref_power = args.preference_power
