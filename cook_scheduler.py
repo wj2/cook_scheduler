@@ -28,6 +28,18 @@ def create_parser():
 	help='path to preferences csv file')
     return parser
 
+def keep_first_occurence(lst):
+    """
+    Given a list, returns a new list of unique elements by
+    keeping only the first occurence of any element
+    """
+    m = []
+    for l in lst:
+        if l not in m:
+            m.append(l)
+
+    return m
+
 def get_preferences(data, dates, begin_end_columns=(2,7)):
     """
     Extract preferences from survey responses table. Also excludes any invalid dates.
@@ -50,14 +62,11 @@ def get_preferences(data, dates, begin_end_columns=(2,7)):
 	    logging.warning('%s selected excluded dates: %s' % 
 		    (name, print_dates(bad_dates)))
 	    p = [d for d in p if d in dates]
-        p_od = c.OrderedDict()
-        p_od.update(zip(p, len(p)*[0]))
-        if len(p_od.keys()) < len(p):
-            logging.warning('{} selected the same date more than '
-                            'once'.format(name))
-        p = p_od.keys()
 
-	preferences[name] = p
+        q = keep_first_occurence(p)
+        if len(q) != len(p):
+            logging.warning('%s selected duplicate dates' % name)
+	preferences[name] = q
 
     return preferences
 
