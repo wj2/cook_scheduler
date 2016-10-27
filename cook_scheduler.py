@@ -2,6 +2,7 @@ import pandas as pd
 import argparse
 from pulp import *
 from icalendar import *
+import collections as c
 
 def create_parser():
     parser = argparse.ArgumentParser(description='generate an cook cycle assignment from ranked date preferences')
@@ -49,6 +50,12 @@ def get_preferences(data, dates):
 	    logging.warning('%s selected excluded dates: %s' % 
 		    (name, print_dates(bad_dates)))
 	    p = [d for d in p if d in dates]
+        p_od = c.OrderedDict()
+        p_od.update(zip(p, len(p)*[0]))
+        if len(p_od.keys()) < len(p):
+            logging.warning('{} selected the same date more than '
+                            'once'.format(name))
+        p = p_od.keys()
 
 	preferences[name] = p
 
@@ -89,10 +96,7 @@ def create_problem(dates, community, preferences, weight_power=1.):
 
     # each person cooks once on their days
     for name in names:
-	prob += sum(variables[name][d] for d in set(preferences[name])) == 1
-        if len(set(preferences[name])) < len(preferences[name]):
-            logging.warning('{} selected one date multiple '
-                            'times'.format(name))
+	prob += sum(variables[name][d] for d in preferences[name]) == 1
 
     # each regular date has at most one cook
     for d in dates.difference(community):
