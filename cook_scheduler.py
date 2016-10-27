@@ -13,6 +13,8 @@ def create_parser():
 	help='file to save schedule to'),
     parser.add_argument('--ical', type=str,
 	help='file to save ical to'),
+    parser.add_argument('--preference_power', type=float, default=1.,
+        help='power to raise the cost of preference rankings to'),
     parser.add_argument('start', type=pd.Timestamp,
 	help='date to start the cook cycle on  (inclusive)')
     parser.add_argument('end', type=pd.Timestamp,
@@ -48,14 +50,15 @@ def get_preferences(data, dates):
 
     return preferences
 
-def create_problem(dates, community, preferences):
+def create_problem(dates, community, preferences, weight_power=1.):
     """
     Create the cook schedule linear programming problem
 
     Args:
         dates: list of cook cycle dates
         community: list of cook cycle dates requring two cooks
-        preferences: dictionary of (name, dates) pairs as returned by get_preferences()
+        preferences: dictionary of (name, dates) pairs as returned by 
+            get_preferences()
     
     Returns: 
 	prob: LpProblem object
@@ -76,8 +79,8 @@ def create_problem(dates, community, preferences):
     # the objective is to minimize the average preference number
     objective = LpAffineExpression()
     for name in names:
-	objective += sum((i+1)*variables[name][d] 
-		for i,d in enumerate(preferences[name]))
+	objective += sum(((i+1)**weight_power)*variables[name][d] 
+                         for i,d in enumerate(preferences[name]))
     prob += objective / float(len(names))
 
     # each person cooks once on their days
@@ -86,11 +89,13 @@ def create_problem(dates, community, preferences):
 
     # each regular date has at most one cook
     for d in dates.difference(community):
-	prob += sum(variables[name][d] for name in names if d in preferences[name]) <= 1
+	prob += sum(variables[name][d] 
+                    for name in names if d in preferences[name]) <= 1
 
     # each community dinner date has at most two cooks
     for d in community:
-	prob += sum(variables[name][d] for name in names if d in preferences[name]) <= 2
+	prob += sum(variables[name][d] 
+                    for name in names if d in preferences[name]) <= 2
 
     return prob, variables
 
@@ -138,10 +143,12 @@ if __name__ == '__main__':
 
     dates = set(pd.date_range(args.start, args.end))\
 	.difference(pd.Series(args.exclude))
+    pref_power = args.preference_power
 
     preferences = get_preferences(data, dates)
 
-    prob, variables = create_problem(dates, pd.Series(args.community), preferences)
+    prob, variables = create_problem(dates, pd.Series(args.community), 
+                                     preferences, weight_power=pref_power)
 
     prob.solve()
     print("Status: %s" % LpStatus[prob.status])
