@@ -6,7 +6,9 @@ This program generates a cook schedule given a list of date preferences for each
 > python cook_scheduler.py --help
 usage: cook_scheduler.py [-h] [-e [EXCLUDE [EXCLUDE ...]]]
                          [-c [COMMUNITY [COMMUNITY ...]]] [--csv CSV]
-                         [--ical ICAL]
+                         [--ical ICAL] [--preference_power PREFERENCE_POWER]
+                         [--begin_column BEGIN_COLUMN]
+                         [--end_column END_COLUMN]
                          start end preferences
 
 generate an cook cycle assignment from ranked date preferences
@@ -24,6 +26,15 @@ optional arguments:
                         dates requiring two cooks
   --csv CSV             file to save schedule to
   --ical ICAL           file to save ical to
+  --preference_power PREFERENCE_POWER
+                        power to raise the cost of preference rankings to
+                        (default=1)
+  --begin_column BEGIN_COLUMN
+                        index of the first preference column in the csv
+                        (default=2)
+  --end_column END_COLUMN
+                        index of the last preference column in the csv
+                        (default=7)
 ```
 
 ### Example

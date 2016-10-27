@@ -28,7 +28,7 @@ def create_parser():
 	help='path to preferences csv file')
     return parser
 
-def get_preferences(data, dates):
+def get_preferences(data, dates, begin_end_columns=(2,7)):
     """
     Extract preferences from survey responses table. Also excludes any invalid dates.
 
@@ -44,7 +44,7 @@ def get_preferences(data, dates):
     for i,person in data.iterrows():
 	name = person['Your Name']
 	
-	p = person[2:].values
+	p = person[begin_end_columns[0]:begin_end_columns[1]].values
 	if not dates.issuperset(p):
 	    bad_dates = set(p).difference(dates)
 	    logging.warning('%s selected excluded dates: %s' % 
@@ -149,13 +149,14 @@ def print_dates(dates):
 if __name__ == '__main__':
     parser = create_parser()
     args = parser.parse_args()
+    btoe = (args.begin_column, args.end_column)
     data = pd.read_csv(args.preferences, 
-                       parse_dates=range(args.begin_column, args.end_column))
+                       parse_dates=range(*btoe))
     dates = set(pd.date_range(args.start, args.end))\
 	.difference(pd.Series(args.exclude))
     pref_power = args.preference_power
 
-    preferences = get_preferences(data, dates)
+    preferences = get_preferences(data, dates, begin_end_columns=btoe)
 
     prob, variables = create_problem(dates, pd.Series(args.community), 
                                      preferences, weight_power=pref_power)
