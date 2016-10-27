@@ -85,7 +85,10 @@ def create_problem(dates, community, preferences, weight_power=1.):
 
     # each person cooks once on their days
     for name in names:
-	prob += sum(variables[name][d] for d in preferences[name]) == 1
+	prob += sum(variables[name][d] for d in set(preferences[name])) == 1
+        if len(set(preferences[name])) < len(preferences[name]):
+            logging.warning('{} selected one date multiple '
+                            'times'.format(name))
 
     # each regular date has at most one cook
     for d in dates.difference(community):
@@ -96,7 +99,6 @@ def create_problem(dates, community, preferences, weight_power=1.):
     for d in community:
 	prob += sum(variables[name][d] 
                     for name in names if d in preferences[name]) <= 2
-
     return prob, variables
 
 # These constants indexed by day of week (starting Monday)
