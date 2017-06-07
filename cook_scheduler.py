@@ -6,25 +6,28 @@ from icalendar import *
 def create_parser():
     parser = argparse.ArgumentParser(description='generate an cook cycle assignment from ranked date preferences')
     parser.add_argument('-e', '--exclude', type=pd.Timestamp, nargs='*',
-	help='dates to exclude from cook cycle')
+                        help='dates to exclude from cook cycle')
     parser.add_argument('-c', '--community', type=pd.Timestamp, nargs='*',
-	help='dates requiring two cooks')
+                        help='dates requiring two cooks')
     parser.add_argument('--csv', type=str,
-	help='file to save schedule to'),
+                        help='file to save schedule to'),
     parser.add_argument('--ical', type=str,
-	help='file to save ical to'),
+                        help='file to save ical to'),
     parser.add_argument('--preference_power', type=float, default=1.,
-        help='power to raise the cost of preference rankings to (default=1)'),
+                        help='power to raise the cost of preference rankings'
+                        'to (default=1)'),
     parser.add_argument('--begin_column', type=int, default=2,
-        help='index of the first preference column in the csv (default=2)')
+                        help='index of the first preference column in the csv'
+                        '(default=2)')
     parser.add_argument('--end_column', type=int, default=7,
-        help='index of the last preference column in the csv (default=7)')
+                        help='index of the last preference column in the csv'
+                        '(default=7)')
     parser.add_argument('start', type=pd.Timestamp,
-	help='date to start the cook cycle on  (inclusive)')
+                        help='date to start the cook cycle on  (inclusive)')
     parser.add_argument('end', type=pd.Timestamp,
-	help='date to end the cook cycle on (inclusive)')
+                        help='date to end the cook cycle on (inclusive)')
     parser.add_argument('preferences', type=str,
-	help='path to preferences csv file')
+                        help='path to preferences csv file')
     return parser
 
 def keep_first_occurence(lst):
@@ -53,19 +56,19 @@ def get_preferences(data, dates, begin_end_columns=(2,7)):
     """
     preferences = {}
     for i,person in data.iterrows():
-	name = person['Your Name']
-	
-	p = person[begin_end_columns[0]:begin_end_columns[1]].values
-	if not dates.issuperset(p):
-	    bad_dates = set(p).difference(dates)
-	    logging.warning('%s selected excluded dates: %s' % 
-		    (name, print_dates(bad_dates)))
-	    p = [d for d in p if d in dates]
+        name = person['Your Name']
+        
+        p = person[begin_end_columns[0]:begin_end_columns[1]].values
+        if not dates.issuperset(p):
+            bad_dates = set(p).difference(dates)
+            logging.warning('%s selected excluded dates: %s' % 
+                            (name, print_dates(bad_dates)))
+        p = [d for d in p if d in dates]
 
         q = keep_first_occurence(p)
         if len(q) != len(p):
             logging.warning('%s selected duplicate dates' % name)
-	preferences[name] = q
+        preferences[name] = q
 
     return preferences
 
@@ -80,40 +83,40 @@ def create_problem(dates, community, preferences, weight_power=1.):
             get_preferences()
     
     Returns: 
-	prob: LpProblem object
-	variables: a dictionary of (name, variables) pairs
-	    where variables is a dictionary of (date, LpVariable)
+        prob: LpProblem object
+        variables: a dictionary of (name, variables) pairs
+            where variables is a dictionary of (date, LpVariable)
             pairs
     """
     names = preferences.keys()
     variables = {name: {d: LpVariable('%s %s' % (name,d), cat=LpBinary) for d in p}
-	for name,p in preferences.items()}
+                 for name,p in preferences.items()}
 
     slots = len(dates) + len(community)
     if len(names) < slots:
-	logging.warning('There %s slots but only %s cooks' % (slots, len(names)))
+        logging.warning('There %s slots but only %s cooks' % (slots, len(names)))
 
     prob = LpProblem("Cook Cycle",LpMinimize)
 
     # the objective is to minimize the average preference number
     objective = LpAffineExpression()
     for name in names:
-	objective += sum(((i+1)**weight_power)*variables[name][d] 
+        objective += sum(((i+1)**weight_power)*variables[name][d] 
                          for i,d in enumerate(preferences[name]))
     prob += objective / float(len(names))
 
     # each person cooks once on their days
     for name in names:
-	prob += sum(variables[name][d] for d in preferences[name]) == 1
+        prob += sum(variables[name][d] for d in preferences[name]) == 1
 
     # each regular date has at most one cook
     for d in dates.difference(community):
-	prob += sum(variables[name][d] 
+        prob += sum(variables[name][d] 
                     for name in names if d in preferences[name]) <= 1
 
     # each community dinner date has at most two cooks
     for d in community:
-	prob += sum(variables[name][d] 
+        prob += sum(variables[name][d] 
                     for name in names if d in preferences[name]) <= 2
     return prob, variables
 
@@ -159,9 +162,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
     btoe = (args.begin_column, args.end_column)
     data = pd.read_csv(args.preferences, 
-                       parse_dates=range(*btoe))
+                       parse_dates=list(range(*btoe)))
     dates = set(pd.date_range(args.start, args.end))\
-	.difference(pd.Series(args.exclude))
+        .difference(pd.Series(args.exclude))
     pref_power = args.preference_power
 
     preferences = get_preferences(data, dates, begin_end_columns=btoe)
