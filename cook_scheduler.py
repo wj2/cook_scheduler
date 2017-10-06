@@ -62,7 +62,7 @@ def get_preferences(data, dates, begin_end_columns=(2,7)):
         if not dates.issuperset(p):
             bad_dates = set(p).difference(dates)
             logging.warning('%s selected excluded dates: %s' % 
-                            (name, print_dates(bad_dates)))
+                            (name, list(print_dates(bad_dates))))
         p = [d for d in p if d in dates]
 
         q = keep_first_occurence(p)
