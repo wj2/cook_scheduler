@@ -55,6 +55,7 @@ def get_preferences(data, dates, begin_end_columns=(2,7)):
         dates in decreasing order
     """
     preferences = {}
+    selected_dates = set()
     for i,person in data.iterrows():
         name = person['Your Name']
         
@@ -62,14 +63,19 @@ def get_preferences(data, dates, begin_end_columns=(2,7)):
         if not dates.issuperset(p):
             bad_dates = set(p).difference(dates)
             logging.warning('%s selected excluded dates: %s' % 
-                            (name, list(print_dates(bad_dates))))
+                            (name, print_dates(bad_dates)))
         p = [d for d in p if d in dates]
+        [selected_dates.add(d) for d in p if d in dates]
 
         q = keep_first_occurence(p)
         if len(q) != len(p):
             logging.warning('%s selected duplicate dates' % name)
         preferences[name] = q
 
+    unselected_dates = dates.difference(selected_dates)
+    if len(unselected_dates) > 0:
+        logging.warning('the following dates were not selected by '
+                        'anyone: {}'.format(print_dates(unselected_dates)))
     return preferences
 
 def create_problem(dates, community, preferences, weight_power=1.):
@@ -155,7 +161,7 @@ def to_icalendar(schedule, community=None):
     return calendar
 
 def print_dates(dates):
-    return map(lambda d: d.strftime('%d-%m-%Y'), dates)
+    return list(map(lambda d: d.strftime('%d-%m-%Y'), dates))
 
 if __name__ == '__main__':
     parser = create_parser()
