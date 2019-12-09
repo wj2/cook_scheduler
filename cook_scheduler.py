@@ -152,8 +152,8 @@ def to_icalendar(schedule, community=None):
                 (str.join(' & ', names), MEAL_NAMES[date.dayofweek]))
 
         time = MEAL_TIMES[date.dayofweek]
-        event.add('dtstart', (date + pd.Timedelta(time,'h')).to_datetime())
-        event.add('dtend', (date + pd.Timedelta(time+1,'h')).to_datetime())
+        event.add('dtstart', (date + pd.Timedelta(time,'h')).to_pydatetime())
+        event.add('dtend', (date + pd.Timedelta(time+1,'h')).to_pydatetime())
         event.add('location', 'Bowers House')
 
         calendar.add_component(event)
