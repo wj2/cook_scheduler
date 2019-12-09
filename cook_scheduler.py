@@ -161,7 +161,8 @@ def to_icalendar(schedule, community=None):
     return calendar
 
 def print_dates(dates):
-    return list(map(lambda d: d.strftime('%d-%m-%Y'), dates))
+    dates = pd.to_datetime(list(dates))
+    return dates.strftime('%d-%m-%Y')
 
 if __name__ == '__main__':
     parser = create_parser()
